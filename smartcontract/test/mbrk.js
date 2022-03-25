@@ -4,10 +4,10 @@ contract('Mbrk', (accounts) => {
     it('should ping', async () => {
         const mbrkInstance = await Mbrk.deployed()
         const res = await mbrkInstance.ping()
-        assert.deepEqual(res, {},'ping did not respond empty')
+        assert.deepEqual(res, {}, 'ping did not respond empty')
     })
 
-    describe('user create and delete', () => {
+    describe('accounts', () => {
         it('should create user', async () => {
             const mbrkInstance = await Mbrk.deployed()
             await mbrkInstance.createUser(accounts[0])
@@ -43,4 +43,39 @@ contract('Mbrk', (accounts) => {
         })
     })
 
+    describe('ant hills', () => {
+        it('should enable for new user', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.createUser(accounts[1])
+            const hill = await mbrkInstance.getHill(accounts[1])
+            assert(hill.isValid, "ant hill was not enabled")
+        })
+
+        it('should reset for deleted user', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.grantReadAccess(accounts[1], accounts[2])
+            await mbrkInstance.deleteUser(accounts[1])
+            const hill = await mbrkInstance.getHill(accounts[1])
+            assert(!hill.isValid, "ant hill was not reset")
+            assert(!hill.accessList.length,0,"access list was not reset")
+        })
+
+        it('should add user to access list', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.createUser(accounts[1])
+            await mbrkInstance.grantReadAccess(accounts[1], accounts[2])
+            await mbrkInstance.grantReadAccess(accounts[1], accounts[3])
+            const hill = await mbrkInstance.getHill(accounts[1])
+            assert(hill.accessList[0], accounts[2], "access list is incorrect")
+            assert(hill.accessList[1], accounts[3], "access list is incorrect")
+        })
+
+        it('should remove user from access list', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.revokeReadAccess(accounts[1], accounts[2])
+            const hill = await mbrkInstance.getHill(accounts[1])
+            assert(hill.accessList[0], accounts[3], "access list is incorrect")
+            assert(hill.accessList.length,1, "more than one user in access list")
+        })
+    })
 });
