@@ -44,16 +44,45 @@ library AntHillsLibrary {
         return len;
     }
 
-    function getHill(AntHills storage self, address hillOwner) internal view returns (address owner, address[] memory accessList, bool isValid) {
-        return(hillOwner, self._hills[hillOwner].accessList, self._hills[hillOwner].isValid);
+
+
+    function storeFileMeta(AntHills storage self, string calldata filename, string calldata cid, uint filesize, address hillOwner) internal {
+        self._hills[hillOwner].files[filename].cid = cid;
+        self._hills[hillOwner].files[filename].size = filesize;
+        self._hills[hillOwner].files[filename].isValid = true;
+    }
+
+    function loadFileMeta(AntHills storage self, string calldata filename, address hillOwner) internal view returns (File storage) {
+        return self._hills[hillOwner].files[filename];
+    }
+
+    function resetFileMeta(AntHills storage self, string calldata filename, address hillOwner) internal {
+        delete self._hills[hillOwner].files[filename];
+    }
+
+
+    function getHill(AntHills storage self, address hillOwner) internal view returns (AntHill storage) {
+        return self._hills[hillOwner];
     }
 
     function exists(AntHills storage self, address hillOwner) internal view returns (bool) {
         return self._hills[hillOwner].isValid;
     }
+
+    function exists(AntHills storage self, string calldata filename, address hillOwner) internal view returns (bool){
+        return self._hills[hillOwner].files[filename].isValid;
+    }
 }
 
 struct AntHill {
-    bool isValid;
     address[] accessList;
+    string[] filenames;
+    mapping(string => File) files;
+    bool isValid;
+}
+
+struct File {
+    string cid;
+    uint size;
+    bool isValid;
 }

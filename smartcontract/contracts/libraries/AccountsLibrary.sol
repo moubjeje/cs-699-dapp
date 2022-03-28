@@ -10,29 +10,34 @@ library AccountsLibrary {
     }
 
     function addUser(Accounts storage self, address key) internal returns (bool) {
-        if (exists(self, key)) {
-            return false;
-        }
-
         self._users[key].isValid = true;
         self._size = self._size + 1;
         return true;
     }
 
     function resetUser(Accounts storage self, address key) internal returns (bool) {
-        if (!exists(self, key)){
-            return false;
-        }
-
         self._users[key].isValid = false;
         self._users[key].isAdmin = false;
+        delete self._users[key].accessList;
         self._size = self._size - 1;
-        
+
         return true;
     }
 
-    function getUser(Accounts storage self, address key) internal view returns(address _key, bool isAdmin, bool isValid){
-        return (key, self._users[key].isAdmin, self._users[key].isValid);
+    function setAdmin(Accounts storage self, address key) internal{
+        self._users[key].isAdmin = true;
+    }
+
+    function resetAdmin(Accounts storage self, address key) internal{
+        self._users[key].isAdmin = false;
+    }
+
+    function checkAdmin(Accounts storage self, address key) internal view returns (bool){
+        return self._users[key].isAdmin && self._users[key].isValid;
+    }
+
+    function getUser(Accounts storage self, address key) internal view returns(User memory){
+        return self._users[key];
     }
 
     function size(Accounts storage self) internal view returns (uint) {
@@ -47,4 +52,5 @@ library AccountsLibrary {
 struct User {
     bool isValid;
     bool isAdmin;
+    address[] accessList;
 }
