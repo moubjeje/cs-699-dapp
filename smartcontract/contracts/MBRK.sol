@@ -50,11 +50,7 @@ contract Mbrk {
         accounts.resetAdmin(key);
     }
 
-    function getUser()
-        external
-        view
-        returns (User memory)
-    {
+    function getUser() external view returns (User memory) {
         User memory user = accounts.getUser(msg.sender);
         require(user.isValid, "User does not exist");
         return user;
@@ -79,21 +75,22 @@ contract Mbrk {
     function getHill()
         external
         view
-        returns (
-            address[] memory accessList,
-            bool isValid
-        )
+        returns (address[] memory accessList, bool isValid)
     {
         AntHill storage hill = antHills.getHill(msg.sender);
         require(hill.isValid, "Hill does not exist");
         return (hill.accessList, hill.isValid);
     }
 
-    function createFile(string calldata filename, string calldata cid, uint filesize) external {
-        if(!antHills.exists(msg.sender)){
+    function createFile(
+        string calldata filename,
+        string calldata cid,
+        uint256 filesize
+    ) external {
+        if (!antHills.exists(msg.sender)) {
             revert("Hill does not exist");
         }
-        if(antHills.exists(filename, msg.sender)){
+        if (antHills.exists(filename, msg.sender)) {
             revert("File already exists");
         }
         antHills.storeFileMeta(filename, cid, filesize, msg.sender);
