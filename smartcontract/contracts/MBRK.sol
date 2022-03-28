@@ -64,11 +64,16 @@ contract Mbrk {
         if (!antHills.exists(msg.sender)) {
             revert("Hill does not exist");
         }
-        antHills.addUser(msg.sender, key);
+        if (!accounts.exists(key)) {
+            revert("User does not exist");
+        }
+        accounts.addHill(msg.sender, key);
+        antHills.addUser(key, msg.sender);
     }
 
     function revokeReadAccess(address key) external {
-        antHills.removeUser(msg.sender, key);
+        accounts.removeHill(msg.sender, key);
+        antHills.removeUser(key, msg.sender);
     }
 
     function getHill()

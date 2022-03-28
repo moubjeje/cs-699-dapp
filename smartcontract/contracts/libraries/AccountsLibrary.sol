@@ -6,22 +6,16 @@ library AccountsLibrary {
 
     struct Accounts {
         mapping(address => User) _users;
-        uint _size;
     }
 
-    function addUser(Accounts storage self, address key) internal returns (bool) {
+    function addUser(Accounts storage self, address key) internal {
         self._users[key].isValid = true;
-        self._size = self._size + 1;
-        return true;
     }
 
-    function resetUser(Accounts storage self, address key) internal returns (bool) {
-        self._users[key].isValid = false;
-        self._users[key].isAdmin = false;
+    function resetUser(Accounts storage self, address key) internal {
+        delete self._users[key].isValid;
+        delete self._users[key].isAdmin;
         delete self._users[key].accessList;
-        self._size = self._size - 1;
-
-        return true;
     }
 
     function setAdmin(Accounts storage self, address key) internal{
@@ -36,12 +30,35 @@ library AccountsLibrary {
         return self._users[key].isAdmin && self._users[key].isValid;
     }
 
-    function getUser(Accounts storage self, address key) internal view returns(User memory){
-        return self._users[key];
+    function addHill(Accounts storage self, address hillOwner, address key) internal {
+        return self._users[key].accessList.push(hillOwner);
     }
 
-    function size(Accounts storage self) internal view returns (uint) {
-        return self._size;
+    function removeHill(Accounts storage self, address hillOwner, address key) internal {
+        uint len = self._users[key].accessList.length;
+        uint idx = findIndexOfHill(self,hillOwner,key);
+
+        if(idx >= len){
+            return;
+        }
+
+        self._users[key].accessList[idx] = self._users[key].accessList[len - 1];
+        self._users[key].accessList.pop();
+    }
+
+    function findIndexOfHill(Accounts storage self, address hillOwner, address key) private view returns (uint) {
+        uint len = self._users[key].accessList.length;
+        for (uint i = 0; i < len; i++) {
+            if (self._users[key].accessList[i] == hillOwner) {
+                return i;
+            }
+        }
+
+        return len;
+    }
+
+    function getUser(Accounts storage self, address key) internal view returns(User memory){
+        return self._users[key];
     }
 
     function exists(Accounts storage self, address key) internal view returns (bool) {

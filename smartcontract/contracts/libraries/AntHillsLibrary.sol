@@ -17,11 +17,11 @@ library AntHillsLibrary {
         delete self._hills[hillOwner].accessList;
     }
 
-    function addUser(AntHills storage self, address hillOwner, address key) internal {
+    function addUser(AntHills storage self, address key, address hillOwner) internal {
         self._hills[hillOwner].accessList.push(key);
     }
 
-    function removeUser(AntHills storage self, address hillOwner, address key) internal {
+    function removeUser(AntHills storage self, address key, address hillOwner) internal {
         uint len = self._hills[hillOwner].accessList.length;
         uint idx = findIndexOfUser(self,hillOwner,key);
 
@@ -33,7 +33,7 @@ library AntHillsLibrary {
         self._hills[hillOwner].accessList.pop();
     }
 
-    function findIndexOfUser(AntHills storage self, address hillOwner, address key) private view returns (uint) {
+    function findIndexOfUser(AntHills storage self, address key, address hillOwner) private view returns (uint) {
         uint len = self._hills[hillOwner].accessList.length;
         for (uint i = 0; i < len; i++) {
             if (self._hills[hillOwner].accessList[i] == key) {
@@ -43,8 +43,6 @@ library AntHillsLibrary {
 
         return len;
     }
-
-
 
     function storeFileMeta(AntHills storage self, string calldata filename, string calldata cid, uint filesize, address hillOwner) internal {
         self._hills[hillOwner].files[filename].cid = cid;
