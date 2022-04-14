@@ -56,7 +56,7 @@ contract Mbrk {
         return user;
     }
 
-    function grantReadAccess(address key) external {
+    function grantRea Access(address key) external {
         if (!antHills.exists(msg.sender)) {
             revert("Hill does not exist");
         }
