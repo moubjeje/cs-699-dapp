@@ -1,9 +1,9 @@
 import LoginButton from '../components/LoginButton';
 
-function Login({ handleLogin }) {
+function Login({ onLogin }) {
   return (
     <div className="Login">
-      <LoginButton handleLogin={handleLogin} />
+      <LoginButton onLogin={onLogin} />
     </div>
   );
 }

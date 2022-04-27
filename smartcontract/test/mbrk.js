@@ -1,8 +1,6 @@
 const Mbrk = artifacts.require("Mbrk");
 
 contract('Mbrk', (accounts) => {
-    const owner = accounts[0];
-
     it('should ping', async () => {
         const mbrkInstance = await Mbrk.deployed()
         const res = await mbrkInstance.ping()
@@ -112,12 +110,34 @@ contract('Mbrk', (accounts) => {
         it('should remove user from access list', async () => {
             const mbrkInstance = await Mbrk.deployed()
             await mbrkInstance.createUser(accounts[1])
-            await mbrkInstance.grantReadAccess(accounts[2], { from: accounts[1] })
             await mbrkInstance.grantReadAccess(accounts[3], { from: accounts[1] })
-            await mbrkInstance.revokeReadAccess(accounts[2])
+            await mbrkInstance.grantReadAccess(accounts[2], { from: accounts[1] })
+            await mbrkInstance.revokeReadAccess(accounts[2], { from: accounts[1] })
             const hill = await mbrkInstance.getHill({ from: accounts[1] })
             assert(hill.accessList[0], accounts[3], "access list is incorrect")
             assert(hill.accessList.length, 1, "more than one user in access list")
+        })
+    })
+
+    describe('shared hills', () => {
+        it('should get aggregate of two hills', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.createFile('mock1', 'cid', 0, { from: accounts[1] })
+            await mbrkInstance.createFile('mock2', 'cid', 0, { from: accounts[3] })
+            console.log(await mbrkInstance.getUser({from: accounts[3]}))
+            const hill = await mbrkInstance.getHill({ from: accounts[3] })
+            console.log(hill)
+            assert(hill.filenames.length, 2, "filenames list is incorrect")
+            assert(hill.owners[0], accounts[3], "file owner is incorrect")
+            assert(hill.owners[1], accounts[1], "file owner is incorrect")
+        })
+
+        it('should get aggregate of only one hills', async () => {
+            const mbrkInstance = await Mbrk.deployed()
+            await mbrkInstance.revokeReadAccess(accounts[3], { from: accounts[1] })
+            const hill = await mbrkInstance.getHill({ from: accounts[3] })
+            console.log(hill)
+            assert(hill.filenames.length, 1, "filenames list is incorrect")
         })
     })
 

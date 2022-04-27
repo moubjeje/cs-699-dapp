@@ -76,7 +76,7 @@ library AccountsLibrary {
     function getUser(Accounts storage self, address key)
         internal
         view
-        returns (User memory)
+        returns (User storage)
     {
         return self._users[key];
     }

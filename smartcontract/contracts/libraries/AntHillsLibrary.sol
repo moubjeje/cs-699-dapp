@@ -58,6 +58,24 @@ library AntHillsLibrary {
         return len;
     }
 
+    function findIndexOfFilename(
+        AntHills storage self,
+        string calldata filename,
+        address hillOwner
+    ) private view returns (uint256) {
+        uint256 len = self._hills[hillOwner].filenames.length;
+        for (uint256 i = 0; i < len; i++) {
+            if (
+                keccak256(bytes(self._hills[hillOwner].filenames[i])) ==
+                keccak256(bytes(filename))
+            ) {
+                return i;
+            }
+        }
+
+        return len;
+    }
+
     function storeFileMeta(
         AntHills storage self,
         string calldata filename,
@@ -65,6 +83,7 @@ library AntHillsLibrary {
         uint256 filesize,
         address hillOwner
     ) internal {
+        self._hills[hillOwner].filenames.push(filename);
         self._hills[hillOwner].files[filename].cid = cid;
         self._hills[hillOwner].files[filename].size = filesize;
         self._hills[hillOwner].files[filename].isValid = true;
@@ -83,6 +102,17 @@ library AntHillsLibrary {
         string calldata filename,
         address hillOwner
     ) internal {
+        uint256 len = self._hills[hillOwner].filenames.length;
+        uint256 idx = findIndexOfFilename(self, filename, hillOwner);
+
+        if (idx >= len) {
+            return;
+        }
+
+        self._hills[hillOwner].filenames[idx] = self
+            ._hills[hillOwner]
+            .filenames[len - 1];
+        self._hills[hillOwner].filenames.pop();
         delete self._hills[hillOwner].files[filename];
     }
 
@@ -108,6 +138,15 @@ library AntHillsLibrary {
         address hillOwner
     ) internal view returns (bool) {
         return self._hills[hillOwner].files[filename].isValid;
+    }
+
+    function exists(
+        AntHills storage self,
+        address user,
+        address hillOwner
+    ) internal view returns (bool) {
+        uint256 i = findIndexOfUser(self, user, hillOwner);
+        return (i < self._hills[hillOwner].accessList.length);
     }
 }
 

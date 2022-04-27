@@ -1,2 +1,5 @@
 smartcontract/build/*
 /.vscode
+
+*/node_modules
+/smartcontract/.secret
