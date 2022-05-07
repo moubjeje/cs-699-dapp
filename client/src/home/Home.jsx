@@ -18,7 +18,19 @@ function Home() {
   const [contractUpdate, setContractUpdate] = useState(0)
   addEventCallback(() => setContractUpdate(contractUpdate + 1))
 
+  const updateContractData = () => {
+    //bad fix
+    loadRepoData().then(setRepoData)
+      .catch(() => createAlert(LANG.callBad))
+    loadUserData().then(setUserData)
+      .catch(() => createAlert(LANG.callBad))
+  }
+
   const createAlert = (msg, severity = 'error') => {
+    if (msg === LANG.callPass) {
+      updateContractData()
+    }
+
     const newAlert = <Alert key={`${alerts.length}_${msg}`} severity={severity}>{msg}</Alert>
     setAlerts([...alerts, newAlert])
     setTimeout(() => {
@@ -32,10 +44,7 @@ function Home() {
   }
 
   useEffect(() => {
-    loadRepoData().then(setRepoData)
-      .catch(() => createAlert(LANG.callBad))
-    loadUserData().then(setUserData)
-      .catch(() => createAlert(LANG.callBad))
+    updateContractData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contractUpdate])
 

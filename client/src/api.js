@@ -273,5 +273,4 @@ const setupEventListeners = (_contract, account) => {
         .on('data', callback)
     _contract.events.RepoUpdated(eventOptions)
         .on('data', callback)
-
 }
