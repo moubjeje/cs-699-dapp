@@ -11,9 +11,12 @@ contract Mbrk {
     AccountsLibrary.Accounts accounts;
     AntHillsLibrary.AntHills antHills;
 
-    event CreateUser(
-        address key,
-        address sender
+    event LibraryUpdated(
+        address libraryOwner
+    );
+
+    event UserUpdated(
+        address user
     );
 
     constructor() {
@@ -37,13 +40,17 @@ contract Mbrk {
         accounts.addUser(key);
         antHills.enableHill(key);
 
-        emit CreateUser(key, msg.sender);
+        emit LibraryUpdated(key);
+        emit UserUpdated(key);
     }
 
     function deleteUser(address key) external onlyAdmin {
         require(msg.sender != key, "Caller is user");
         accounts.resetUser(key);
         antHills.resetHill(key);
+
+        emit UserUpdated(key);
+        emit LibraryUpdated(key);
     }
 
     function grantAdmin(address key) external onlyAdmin {
@@ -51,11 +58,15 @@ contract Mbrk {
             revert("User does not exist");
         }
         accounts.setAdmin(key);
+
+        emit UserUpdated(key);
     }
 
     function revokeAdmin(address key) external onlyAdmin {
         require(msg.sender != key, "Caller is user");
         accounts.resetAdmin(key);
+
+        emit UserUpdated(key);
     }
 
     function getUser() external view returns (User memory) {
@@ -77,17 +88,24 @@ contract Mbrk {
 
         accounts.addHill(msg.sender, key);
         antHills.addUser(key, msg.sender);
+
+        emit LibraryUpdated(msg.sender);
+        emit UserUpdated(key);
     }
 
     function revokeReadAccess(address key) external {
         accounts.removeHill(msg.sender, key);
         antHills.removeUser(key, msg.sender);
+
+        emit LibraryUpdated(msg.sender);
+        emit UserUpdated(key);
     }
 
     function getHill()
         external
         view
         returns (
+            address hillOwner,
             string[] memory filenames,
             address[] memory owners,
             address[] memory accessList,
@@ -120,7 +138,7 @@ contract Mbrk {
             allOwners = concatenateAddressArrays(allOwners, otherOwnerArr);
         }
 
-        return (allFilenames, allOwners, hill.accessList, hill.isValid);
+        return (msg.sender, allFilenames, allOwners, hill.accessList, hill.isValid);
     }
 
     function createFile(
@@ -135,10 +153,14 @@ contract Mbrk {
             revert("File already exists");
         }
         antHills.storeFileMeta(filename, cid, filesize, msg.sender);
+
+        emit LibraryUpdated(msg.sender);
     }
 
     function deleteFile(string calldata filename) external {
         antHills.resetFileMeta(filename, msg.sender);
+
+        emit LibraryUpdated(msg.sender);
     }
 
     function getFile(string calldata filename)

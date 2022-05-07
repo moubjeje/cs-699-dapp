@@ -2,23 +2,23 @@
 pragma solidity ^0.8.12;
 
 library AntHillsLibrary {
-    using AntHillsLibrary for AntHills;
+    using AntHillsLibrary for FileLibrary;
 
-    struct AntHills {
+    struct FileLibrary {
         mapping(address => AntHill) _hills;
     }
 
-    function enableHill(AntHills storage self, address hillOwner) internal {
+    function enableHill(FileLibrary storage self, address hillOwner) internal {
         self._hills[hillOwner].isValid = true;
     }
 
-    function resetHill(AntHills storage self, address hillOwner) internal {
+    function resetHill(FileLibrary storage self, address hillOwner) internal {
         self._hills[hillOwner].isValid = false;
         delete self._hills[hillOwner].accessList;
     }
 
     function addUser(
-        AntHills storage self,
+        FileLibrary storage self,
         address key,
         address hillOwner
     ) internal {
@@ -26,7 +26,7 @@ library AntHillsLibrary {
     }
 
     function removeUser(
-        AntHills storage self,
+        FileLibrary storage self,
         address key,
         address hillOwner
     ) internal {
@@ -44,7 +44,7 @@ library AntHillsLibrary {
     }
 
     function findIndexOfUser(
-        AntHills storage self,
+        FileLibrary storage self,
         address key,
         address hillOwner
     ) private view returns (uint256) {
@@ -59,7 +59,7 @@ library AntHillsLibrary {
     }
 
     function findIndexOfFilename(
-        AntHills storage self,
+        FileLibrary storage self,
         string calldata filename,
         address hillOwner
     ) private view returns (uint256) {
@@ -77,7 +77,7 @@ library AntHillsLibrary {
     }
 
     function storeFileMeta(
-        AntHills storage self,
+        FileLibrary storage self,
         string calldata filename,
         string calldata cid,
         uint256 filesize,
@@ -90,7 +90,7 @@ library AntHillsLibrary {
     }
 
     function loadFileMeta(
-        AntHills storage self,
+        FileLibrary storage self,
         string calldata filename,
         address hillOwner
     ) internal view returns (File storage) {
@@ -98,7 +98,7 @@ library AntHillsLibrary {
     }
 
     function resetFileMeta(
-        AntHills storage self,
+        FileLibrary storage self,
         string calldata filename,
         address hillOwner
     ) internal {
@@ -116,7 +116,7 @@ library AntHillsLibrary {
         delete self._hills[hillOwner].files[filename];
     }
 
-    function getHill(AntHills storage self, address hillOwner)
+    function getHill(FileLibrary storage self, address hillOwner)
         internal
         view
         returns (AntHill storage)
@@ -124,7 +124,7 @@ library AntHillsLibrary {
         return self._hills[hillOwner];
     }
 
-    function exists(AntHills storage self, address hillOwner)
+    function exists(FileLibrary storage self, address hillOwner)
         internal
         view
         returns (bool)
@@ -133,7 +133,7 @@ library AntHillsLibrary {
     }
 
     function exists(
-        AntHills storage self,
+        FileLibrary storage self,
         string calldata filename,
         address hillOwner
     ) internal view returns (bool) {
@@ -141,7 +141,7 @@ library AntHillsLibrary {
     }
 
     function exists(
-        AntHills storage self,
+        FileLibrary storage self,
         address user,
         address hillOwner
     ) internal view returns (bool) {

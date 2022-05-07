@@ -1,21 +1,23 @@
-import { Button, List, ListItem, ListItemText } from '@mui/material'
-import { useEffect, useRef, useState } from 'react'
+import { Button, List, ListItem } from '@mui/material'
+import { useCallback, useRef, useState } from 'react'
 import { LANG } from '../constants'
-import { downloadFromIpfs, loadLibraryData, pingContract, uploadToIpfs, deleteFileFromContract } from '../api'
+import { downloadFromIpfs, uploadToIpfs, deleteFileFromContract } from '../api'
 import './ContentLibrary.scss'
 
-export default function ContentLibrary() {
+export default function ContentLibrary({ libraryData }) {
     const fileSubmissionBox = useRef(null)
     const [submittedFile, setSubmittedFile] = useState(null);
-    const [libraryData, setLibraryData] = useState(null);
 
-    const dev = {
-        filenames: ['abc.txt', 'cab.txt', 'bac.txt', 'acb.txt', 'bca.txt', 'cba.txt'],
-        owners: ['abc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txtabc.txt', 'cab.txt', 'bac.txt', 'acb.txt', 'bca.txt', 'cba.txt']
-    }
-    useEffect(() => {
-        loadLibraryData().then(setLibraryData)
-    }, [])
+    const getFiles = useCallback(() => {
+        const filenames = libraryData?.filenames ?? []
+        const owners = libraryData?.owners ?? []
+        const res = filenames.map((n, i) => {
+            return { name: n, owner: owners[i] ?? null }
+        })
+
+        console.log(res)
+        return res;
+    }, [libraryData?.filenames, libraryData?.owners]);
 
     const handleFileSubmit = (e) => {
         setSubmittedFile(e.target.files[0])
@@ -46,6 +48,11 @@ export default function ContentLibrary() {
         deleteFileFromContract(filename)
     }
 
+    const isOwner = (fileOwner) => {
+        console.log(libraryData.hillOwner)
+        return libraryData.hillOwner.toLowerCase() === fileOwner.toLowerCase()
+    }
+
     return (
         <div className="contentLibrary">
             <div className="fileUploadBox">
@@ -58,15 +65,15 @@ export default function ContentLibrary() {
             <div className="library">
                 <h1>{LANG.libraryHeader}</h1>
                 <List className="list">
-                    {libraryData?.filenames.map((filename, i) => {
+                    {getFiles().map((file, i) => {
                         return (
-                            <ListItem className="file" key={filename}>
+                            <ListItem className="file" key={file.name}>
                                 <div className="fileInfo">
-                                    <p>{filename}</p>
-                                    {/* <p className="owner">{libraryData.owners[i]}</p> */}
+                                    <p>{file.name}</p>
+                                    <p className="owner">{file.owner}</p>
                                 </div>
-                                <Button className="downloadButton" onClick={() => handleDownload(filename)}>{LANG.download}</Button>
-                                <Button className="deleteButton" onClick={() => handleDelete(filename)}>{LANG.delete}</Button>
+                                <Button className="downloadButton" onClick={() => handleDownload(file.name)} >{LANG.download}</Button>
+                                {isOwner(file.owner) && <Button className="deleteButton" onClick={() => handleDelete(file.name)} >{LANG.delete}</Button>}
                             </ListItem>
                         )
                     })}

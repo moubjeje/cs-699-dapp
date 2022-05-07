@@ -1,72 +1,77 @@
 .contentLibrary {
     height: 100%;
-    width: 35%;
 
     .fileUploadBox {
-        display: flex;
+        display: grid;
         height: 30px;
+        grid-template-columns: 6fr 2fr;
+        grid-gap: 20px;
 
         .uploadFileButton {
-            flex-direction: column;
-            flex-grow: 1;
-            justify-content: flex-start;
+            height: 40px;
         }
 
         .storeFileButton {
-            margin-left: 10px;
-            width: 150px;
+            height: 40px;
             float: right;
         }
     }
 
     .library {
+        margin-top: 20px;
         background-color: #ffff;
         border-radius: 4px;
         box-shadow: 0px 2px 1px -1px rgb(0 0 0 / 20%), 0px 1px 1px 0px rgb(0 0 0 / 14%), 0px 1px 3px 0px rgb(0 0 0 / 12%);
+        padding: 15px;
 
         h1 {
-            margin-left: 20px;
-            margin-bottom: 0px;
+            margin: 0;
+            // margin-bottom: 20px;
             color: #42a5f5;
         }
 
         .list {
             margin: 0 auto;
             height: 300px;
-            width: 90%;
             overflow-y: scroll;
 
             .file {
                 margin-top: 6px;
                 box-shadow: 0px 1px 4px -2px black;
-                display: flex;
-
-                p {
-                    flex-direction: column;
-                    flex-grow: 1;
-                    margin-right: 15px;
-                }
 
                 .fileInfo {
                     display: flex;
-                    overflow: scroll;
-                    white-space: nowrap;
-                    margin-right:auto;
-                    max-width: 65%;
-                }
+                    overflow-x: scroll;
+                    overflow-y: hidden;
+                    margin-right: auto;
+                    word-break: break-all;
+                    overflow-wrap: break-all;
+                    word-wrap: break-all;
+                    hyphens: auto;
+                    max-height: 50px;
 
-                .owner {
-                    color: gray;
-                }
+                    .owner {
+                        color: gray;
+                    }
 
-                .downloadButton {
-                    margin-right: 0;
+                    p {
+                        padding: 0;
+                        margin-left: 0;
+                        margin-right: 10px;
+                        min-width: fit-content;
+                        overflow-y: hidden;
+                        height: 20px;
+                    }
                 }
 
                 .deleteButton {
-                    margin-left: 0;
                     color: red;
                     width: fit-content;
+                }
+
+                Button {
+                    margin-left: 10px;
+                    margin-right: 0;
                 }
             }
         }

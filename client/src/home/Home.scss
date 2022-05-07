@@ -1,5 +1,10 @@
 .home{
-    width: 90%;
-    margin-top: 50x;
-    margin: 50px auto auto auto;
+    width: 70%;
+    margin: 50px auto;
+
+    .row{
+        display: grid;
+        grid-template-columns: 4fr 3fr;
+        grid-gap: 20px;
+    }
 }

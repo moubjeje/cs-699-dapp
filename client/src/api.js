@@ -1,6 +1,7 @@
+import { ThemeProvider } from '@emotion/react'
 import { create as createIPFS } from 'ipfs-http-client'
 import Web3 from 'web3'
-import { IPFS_API_ENDPOINT, CONTRACT_ADDRESS, CONTRACT_ABI } from './constants'
+import { IPFS_API_ENDPOINT, CONTRACT_ADDRESS, ABI } from './constants'
 
 const ipfs = createIPFS(IPFS_API_ENDPOINT)
 let web3
@@ -14,9 +15,15 @@ let updateDownload;
 let updateUpload;
 let updateLatency;
 
-export const initializeWeb3 = (_account) => {
-    web3 = new Web3(window.ethereum)
-    contract = new web3.eth.Contract(CONTRACT_ABI(), CONTRACT_ADDRESS, { from: _account })
+export const initializeWeb3 = (account) => {
+    const accountLowerCase = account.toLowerCase();
+    // web3 = new Web3(window.ethereum)
+
+    const provider = new Web3.providers.WebsocketProvider('ws://127.0.0.1:7545');
+    web3 = new Web3(provider)
+    contract = new web3.eth.Contract(ABI, '0xefAB428ce0b7b789230129F29b321d641cc7F52d', { from: accountLowerCase })
+
+    setupEventListeners(contract, accountLowerCase)
 }
 export const resetWeb3 = () => {
     web3.eth.currentProvider.disconnect()
@@ -88,6 +95,14 @@ export const loadLibraryData = async () => {
     }
 }
 
+export const loadUserData = async () => {
+    try {
+        return await contract.methods.getUser().call();
+    } catch (err) {
+        console.error(err)
+    }
+}
+
 const storeFileOnContract = async (filename, fileSize, cid) => {
     try {
         await contract.methods.createFile(filename, cid, fileSize).send()
@@ -142,6 +157,40 @@ export const revokeReadAccess = async (address) => {
     }
 }
 
+export const grantAdmin = async (address) => {
+    try {
+        return await contract.methods.grantAdmin(address).send()
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+export const revokeAdmin = async (address) => {
+    try {
+        return await contract.methods.revokeAdmin(address).send()
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+export const createUser = async (address) => {
+    try {
+        return await contract.methods.createUser(address).send()
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+export const deleteUser = async (address) => {
+    try {
+        return await contract.methods.deleteUser(address).send()
+    } catch (err) {
+        console.error(err)
+    }
+}
+
+
+
 const collectDownloadMetric = (download) => {
     downloads.push(download);
 
@@ -192,7 +241,7 @@ const collectLatencyMetric = (latency) => {
     pings.push(latency);
 
     if (!updateLatency) return
-    console.log(pings)
+
     const average = pings.reduce(({ avg, n }, curr) => {
         return {
             avg: (curr + (n * avg)) / (n + 1),
@@ -208,4 +257,39 @@ export const setupMetrics = (setDownload, setUpload, setLatency) => {
     updateDownload = setDownload
     updateUpload = setUpload
     updateLatency = setLatency
+}
+
+const userUpdatedCallbacks = []
+const libraryUpdatedCallbacks = []
+
+export const addUserUpdatedCallback = (fn) => {
+    userUpdatedCallbacks.push(fn)
+}
+
+export const addLibraryUpdatedCallback = (fn) => {
+    libraryUpdatedCallbacks.push(fn)
+}
+
+const setupEventListeners = (_contract, account) => {
+    const callback = (event) => {
+        const user = event.returnValues.user?.toLowerCase()
+        const libraryOwner = event.returnValues.libraryOwner?.toLowerCase()
+
+        if (user === account) {
+            userUpdatedCallbacks.forEach(fn => fn())
+        }
+
+        if (libraryOwner === account) {
+            libraryUpdatedCallbacks.forEach(fn => fn())
+        }
+    }
+
+    const eventOptions = {
+        fromBlock: 'latest'
+    }
+
+    _contract.events.UserUpdated(eventOptions)
+        .on('data', callback)
+    _contract.events.LibraryUpdated(eventOptions)
+        .on('data', callback)
 }

@@ -1,48 +1,30 @@
-import { TextField, Button, List, ListItem, alertClasses, Alert } from '@mui/material'
-import { useEffect, useState, useRef } from 'react'
+import { TextField, Button, List, ListItem } from '@mui/material'
+import { useState } from 'react'
 import { LANG } from '../constants'
-import { grantReadAccess, loadLibraryData, revokeReadAccess } from '../api'
+import { grantReadAccess, revokeReadAccess } from '../api'
 import './AccessPanel.scss'
 import { utils as web3Utils } from 'web3'
 
-export default function AccessPanel() {
+export default function AccessPanel({ pushAlert }) {
     const [userToAdd, setUserToAdd] = useState('')
-    const [libraryData, setLibraryData] = useState(null)
-    const [alerts, setAlerts] = useState([])
-    const alertsRef = useRef(alerts);
-    alertsRef.current = alerts;
-
-    useEffect(() => {
-        loadLibraryData().then(setLibraryData)
-    }, [])
-
+    const libraryData = { accessList: ["0xEfAb33D5Cd84bB4BefdC8E31cA9172bbecE1fcE2"] }
     const handleAddUser = () => {
         if (!web3Utils.isAddress(userToAdd))
-            return createAlert(`"${userToAdd}" ${LANG.invalidAddress}`)
+            return pushAlert(`"${userToAdd}" ${LANG.invalidAddress}`)
         if (!libraryData)
-            return createAlert(LANG.loading)
+            return pushAlert(LANG.loading)
         if (libraryData.accessList.includes(userToAdd))
-            return createAlert(LANG.addressExists)
+            return pushAlert(LANG.addressExists)
         grantReadAccess(userToAdd)
     }
 
     const handleRemoveUser = (address) => {
-        if (!web3Utils.isAddress(address)) return createAlert(`"${address}" ${LANG.invalidAddress}`, 'error');
+        if (!web3Utils.isAddress(address)) return pushAlert(`"${address}" ${LANG.invalidAddress}`, 'error');
         revokeReadAccess(address)
-    }
-
-    const createAlert = (msg, severity = 'error') => {
-        const newAlert = <Alert key={`${alerts.length}_${msg}`} severity={severity}>{msg}</Alert>
-        setAlerts([...alerts, newAlert]);
-        setTimeout(() => {
-            if (alertsRef.current <= 0) return
-            setAlerts(alertsRef.current.slice(1))
-        }, 3000)
     }
 
     return (
         <div className="accessPanel">
-            {alerts}
             <div className="addUserBox">
                 <TextField className="userAddressField" variant="filled" value={userToAdd} onChange={e => setUserToAdd(e.target.value)} />
                 <Button className="addUserButton" variant="contained" onClick={handleAddUser}>
@@ -55,7 +37,9 @@ export default function AccessPanel() {
                     {libraryData?.accessList.map((userAddress) => {
                         return (
                             <ListItem className="user" key={userAddress}>
-                                <p>{userAddress}</p>
+                                <div className="userInfo">
+                                    <p>{userAddress}</p>
+                                </div>
                                 <Button className="removeButton" onClick={() => handleRemoveUser(userAddress)}>{LANG.remove}</Button>
                             </ListItem>
                         )
