@@ -2,7 +2,7 @@ export const IPFS_API_ENDPOINT = 'https://ipfs.infura.io:5001'
 export const IPFS_PROJECT_ID = '27a33smy5w7Wrvml0j5KWnE7kMp'
 export const IPFS_PROJECT_KEY = '90d01bbba737df2b6550a7f32c0415ff'
 export const WSS_INFURA_HOST = 'wss://ropsten.infura.io/ws/v3/b8509c529b8c49a39d119cc5effa8400'
-export const CONTRACT_ADDRESS = '0xdba76c3791DbBdD2E8994D6372A2ccCc338D93e1'
+export const CONTRACT_ADDRESS = '0xc73625759efb549796497cC606187cD8A361120C'
 const { abi } = require('./contracts/Mbrk.json')
 export const ABI = abi;
 
