@@ -1,60 +1,63 @@
 import { Button, List, ListItem } from '@mui/material'
 import { useCallback, useRef, useState } from 'react'
 import { LANG } from '../constants'
-import { downloadFromIpfs, uploadToIpfs, deleteFileFromContract } from '../api'
-import './ContentLibrary.scss'
+import { downloadFile, uploadFile, deleteFile } from '../api'
+import './RepoViewer.scss'
 
-export default function ContentLibrary({ libraryData }) {
+export default function RepoViewer({ repoData, pushAlert }) {
     const fileSubmissionBox = useRef(null)
-    const [submittedFile, setSubmittedFile] = useState(null);
+    const [submittedFile, setSubmittedFile] = useState(null)
 
-    const getFiles = useCallback(() => {
-        const filenames = libraryData?.filenames ?? []
-        const owners = libraryData?.owners ?? []
+    const fileList = useCallback(() => {
+        const filenames = repoData?.filenames ?? []
+        const owners = repoData?.owners ?? []
         const res = filenames.map((n, i) => {
             return { name: n, owner: owners[i] ?? null }
         })
 
-        console.log(res)
-        return res;
-    }, [libraryData?.filenames, libraryData?.owners]);
+        return res
+    }, [repoData?.filenames, repoData?.owners])
 
     const handleFileSubmit = (e) => {
         setSubmittedFile(e.target.files[0])
     }
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         if (submittedFile == null) {
             return alert('must submit a file first')
         }
 
-        uploadToIpfs(submittedFile)
+        uploadFile(submittedFile)
+            .then(() => pushAlert(LANG.callPass, 'success'))
+            .catch(() => pushAlert(LANG.callBad))
     }
 
     const handleDownload = (filename) => {
-        downloadFromIpfs(filename).then(buffer => new Blob(buffer)).then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-        })
+        downloadFile(filename).then(buffer => new Blob(buffer)).then(blob => {
+            pushAlert(LANG.callPass,'success')
+            const url = window.URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.style.display = 'none'
+            a.href = url
+            a.download = filename
+            document.body.appendChild(a)
+            a.click()
+            window.URL.revokeObjectURL(url)
+        }).catch(()=>pushAlert(LANG.callBad))
     }
 
     const handleDelete = (filename) => {
-        deleteFileFromContract(filename)
+        deleteFile(filename)
+        .then(() => pushAlert(LANG.callPass, 'success'))
+        .catch(() => pushAlert(LANG.callBad))
     }
 
     const isOwner = (fileOwner) => {
-        console.log(libraryData.hillOwner)
-        return libraryData.hillOwner.toLowerCase() === fileOwner.toLowerCase()
+        return repoData.repoOwner.toLowerCase() === fileOwner.toLowerCase()
     }
 
     return (
-        <div className="contentLibrary">
+        <div className="repoViewer">
             <div className="fileUploadBox">
                 <Button className="uploadFileButton" variant="outlined" onClick={() => fileSubmissionBox.current.click()}>
                     {submittedFile?.name ?? LANG.fileUpload}
@@ -62,12 +65,12 @@ export default function ContentLibrary({ libraryData }) {
                 </Button>
                 <Button className="storeFileButton" variant="contained" onClick={handleUpload} >{LANG.submit}</Button>
             </div>
-            <div className="library">
+            <div className="repository">
                 <h1>{LANG.libraryHeader}</h1>
                 <List className="list">
-                    {getFiles().map((file, i) => {
+                    {fileList().map((file, i) => {
                         return (
-                            <ListItem className="file" key={file.name}>
+                            <ListItem className="file" key={i}>
                                 <div className="fileInfo">
                                     <p>{file.name}</p>
                                     <p className="owner">{file.owner}</p>

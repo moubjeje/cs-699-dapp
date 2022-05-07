@@ -1,6 +1,5 @@
 .adminPanel {
     display: block;
-    // height: 50px;
     max-height: fit-content;
     margin: 30px auto;
     background-color: #ffff;
@@ -14,29 +13,36 @@
         color: #42a5f5;
     }
 
-    .userAddressField {
-        margin-right: 0;
-        width: 40%;
+    .controls {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        grid-gap: 20px;
 
-        input {
-            height: 30px;
-            padding: 5px;
+        .userAddressField {
+            input {
+                height: 30px;
+                padding: 5px;
+            }
         }
-    }
 
-    .buttons {
-        float: right;
-
-        Button {
-            margin-left: 20px;
+        .buttons {
+            margin-left: auto;
             margin-right: 0;
-            width: 150px;
-        }
 
-        .redButton {
-            color: #f44336;
-            border-color: #f44336;
+            Button {
+                margin-left: 20px;
+                margin-right: 0;
+                width: 150px;
+            }
+
+            .redButton {
+                color: #f44336;
+                border-color: #f44336;
+            }
         }
     }
+
+
+
 
 }

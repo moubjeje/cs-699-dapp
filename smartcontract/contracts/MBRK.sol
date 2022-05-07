@@ -2,17 +2,17 @@
 pragma solidity ^0.8.12;
 
 import "./libraries/AccountsLibrary.sol";
-import "./libraries/AntHillsLibrary.sol";
+import "./libraries/RepositoriesLibrary.sol";
 
 contract Mbrk {
     using AccountsLibrary for AccountsLibrary.Accounts;
-    using AntHillsLibrary for AntHillsLibrary.AntHills;
+    using RepositoriesLibrary for RepositoriesLibrary.Repositories;
 
     AccountsLibrary.Accounts accounts;
-    AntHillsLibrary.AntHills antHills;
+    RepositoriesLibrary.Repositories repos;
 
-    event LibraryUpdated(
-        address libraryOwner
+    event RepoUpdated(
+        address user
     );
 
     event UserUpdated(
@@ -20,9 +20,9 @@ contract Mbrk {
     );
 
     constructor() {
-        accounts.addUser(msg.sender);
+        accounts.enableUser(msg.sender);
         accounts.setAdmin(msg.sender);
-        antHills.enableHill(msg.sender);
+        repos.enableRepo(msg.sender);
     }
 
     modifier onlyAdmin() {
@@ -37,20 +37,20 @@ contract Mbrk {
             revert("User already exists");
         }
 
-        accounts.addUser(key);
-        antHills.enableHill(key);
+        accounts.enableUser(key);
+        repos.enableRepo(key);
 
-        emit LibraryUpdated(key);
+        emit RepoUpdated(key);
         emit UserUpdated(key);
     }
 
     function deleteUser(address key) external onlyAdmin {
         require(msg.sender != key, "Caller is user");
         accounts.resetUser(key);
-        antHills.resetHill(key);
+        repos.resetRepo(key);
 
         emit UserUpdated(key);
-        emit LibraryUpdated(key);
+        emit RepoUpdated(key);
     }
 
     function grantAdmin(address key) external onlyAdmin {
@@ -76,46 +76,49 @@ contract Mbrk {
     }
 
     function grantReadAccess(address key) external {
-        if (!antHills.exists(msg.sender)) {
-            revert("Hill does not exist");
+        if (!repos.exists(msg.sender)) {
+            revert("Repository does not exist");
         }
-        if(antHills.exists(key,msg.sender)){
+        if(repos.exists(key,msg.sender)){
             revert("User already has access");
         }
         if (!accounts.exists(key)) {
             revert("User does not exist");
         }
+        if(key == msg.sender){
+            revert("User is repository owner");
+        }
 
-        accounts.addHill(msg.sender, key);
-        antHills.addUser(key, msg.sender);
+        accounts.addRepo(msg.sender, key);
+        repos.addUser(key, msg.sender);
 
-        emit LibraryUpdated(msg.sender);
+        emit RepoUpdated(msg.sender);
         emit UserUpdated(key);
     }
 
     function revokeReadAccess(address key) external {
-        accounts.removeHill(msg.sender, key);
-        antHills.removeUser(key, msg.sender);
+        accounts.removeRepo(msg.sender, key);
+        repos.removeUser(key, msg.sender);
 
-        emit LibraryUpdated(msg.sender);
+        emit RepoUpdated(msg.sender);
         emit UserUpdated(key);
     }
 
-    function getHill()
+    function getRepo()
         external
         view
         returns (
-            address hillOwner,
+            address repoOwner,
             string[] memory filenames,
             address[] memory owners,
             address[] memory accessList,
             bool isValid
         )
     {
-        AntHill storage hill = antHills.getHill(msg.sender);
-        require(hill.isValid, "Hill does not exist");
+        Repository storage repo = repos.getRepo(msg.sender);
+        require(repo.isValid, "Repository does not exist");
 
-        string[] memory allFilenames = hill.filenames;
+        string[] memory allFilenames = repo.filenames;
         address[] memory allOwners = fillAddressArray(
             allFilenames.length,
             msg.sender
@@ -123,22 +126,22 @@ contract Mbrk {
         User storage user = accounts.getUser(msg.sender);
 
         for (uint256 i = 0; i < user.accessList.length; i++) {
-            AntHill storage otherHill = antHills.getHill(user.accessList[i]);
-            if (!otherHill.isValid) {
+            Repository storage otherRepo = repos.getRepo(user.accessList[i]);
+            if (!otherRepo.isValid) {
                 continue;
             }
             allFilenames = concatenateStringArrays(
                 allFilenames,
-                otherHill.filenames
+                otherRepo.filenames
             );
             address[] memory otherOwnerArr = fillAddressArray(
-                otherHill.filenames.length,
+                otherRepo.filenames.length,
                 user.accessList[i]
             );
             allOwners = concatenateAddressArrays(allOwners, otherOwnerArr);
         }
 
-        return (msg.sender, allFilenames, allOwners, hill.accessList, hill.isValid);
+        return (msg.sender, allFilenames, allOwners, repo.accessList, repo.isValid);
     }
 
     function createFile(
@@ -146,21 +149,21 @@ contract Mbrk {
         string calldata cid,
         uint256 filesize
     ) external {
-        if (!antHills.exists(msg.sender)) {
-            revert("Hill does not exist");
+        if (!repos.exists(msg.sender)) {
+            revert("Repository does not exist");
         }
-        if (antHills.exists(filename, msg.sender)) {
+        if (repos.exists(filename, msg.sender)) {
             revert("File already exists");
         }
-        antHills.storeFileMeta(filename, cid, filesize, msg.sender);
+        repos.storeFileMeta(filename, cid, filesize, msg.sender);
 
-        emit LibraryUpdated(msg.sender);
+        emit RepoUpdated(msg.sender);
     }
 
     function deleteFile(string calldata filename) external {
-        antHills.resetFileMeta(filename, msg.sender);
+        repos.resetFileMeta(filename, msg.sender);
 
-        emit LibraryUpdated(msg.sender);
+        emit RepoUpdated(msg.sender);
     }
 
     function getFile(string calldata filename)
@@ -168,7 +171,7 @@ contract Mbrk {
         view
         returns (File memory)
     {
-        File memory file = antHills.loadFileMeta(filename, msg.sender);
+        File memory file = repos.loadFileMeta(filename, msg.sender);
         require(file.isValid, "File does not exist");
         return file;
     }
@@ -178,7 +181,7 @@ contract Mbrk {
         view
         returns (bool isValid)
     {
-        return antHills.exists(filename, msg.sender);
+        return repos.exists(filename, msg.sender);
     }
 
     function concatenateStringArrays(string[] memory a, string[] memory b)

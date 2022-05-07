@@ -68,11 +68,11 @@ contract('Mbrk', (accounts) => {
         })
     })
 
-    describe('ant hills', () => {
+    describe('repositories', () => {
         it('should enable for new user', async () => {
             const mbrkInstance = await Mbrk.deployed()
-            const hill = await mbrkInstance.getHill({ from: accounts[1] })
-            assert(hill.isValid, "ant hill was not enabled")
+            const repo = await mbrkInstance.getRepo({ from: accounts[1] })
+            assert(repo.isValid, "ant repo was not enabled")
         })
 
         it('should add users to access list', async () => {
@@ -81,19 +81,19 @@ contract('Mbrk', (accounts) => {
             await mbrkInstance.createUser(accounts[2])
             await mbrkInstance.grantReadAccess(accounts[3], { from: accounts[1] })
             await mbrkInstance.grantReadAccess(accounts[2], { from: accounts[1] })
-            const hill = await mbrkInstance.getHill({ from: accounts[1] })
+            const repo = await mbrkInstance.getRepo({ from: accounts[1] })
             const user = await mbrkInstance.getUser({ from: accounts[2] })
             assert(user.accessList[0], accounts[1], "access list is incorrect")
-            assert(hill.accessList[1], accounts[2], "access list is incorrect")
-            assert(hill.accessList[0], accounts[3], "access list is incorrect")
+            assert(repo.accessList[1], accounts[2], "access list is incorrect")
+            assert(repo.accessList[0], accounts[3], "access list is incorrect")
         })
 
         it('should delete on deleted user', async () => {
             const mbrkInstance = await Mbrk.deployed()
             await mbrkInstance.deleteUser(accounts[1])
             try {
-                await mbrkInstance.getHill({ from: accounts[1] })
-                assert.fail("hill was not deleted")
+                await mbrkInstance.getRepo({ from: accounts[1] })
+                assert.fail("repo was not deleted")
             } catch (e) {
                 assert(true)
             }
@@ -113,31 +113,28 @@ contract('Mbrk', (accounts) => {
             await mbrkInstance.grantReadAccess(accounts[3], { from: accounts[1] })
             await mbrkInstance.grantReadAccess(accounts[2], { from: accounts[1] })
             await mbrkInstance.revokeReadAccess(accounts[2], { from: accounts[1] })
-            const hill = await mbrkInstance.getHill({ from: accounts[1] })
-            assert(hill.accessList[0], accounts[3], "access list is incorrect")
-            assert(hill.accessList.length, 1, "more than one user in access list")
+            const repo = await mbrkInstance.getRepo({ from: accounts[1] })
+            assert(repo.accessList[0], accounts[3], "access list is incorrect")
+            assert(repo.accessList.length, 1, "more than one user in access list")
         })
     })
 
-    describe('shared hills', () => {
-        it('should get aggregate of two hills', async () => {
+    describe('shared repos', () => {
+        it('should get aggregate of two repos', async () => {
             const mbrkInstance = await Mbrk.deployed()
             await mbrkInstance.createFile('mock1', 'cid', 0, { from: accounts[1] })
             await mbrkInstance.createFile('mock2', 'cid', 0, { from: accounts[3] })
-            console.log(await mbrkInstance.getUser({from: accounts[3]}))
-            const hill = await mbrkInstance.getHill({ from: accounts[3] })
-            console.log(hill)
-            assert(hill.filenames.length, 2, "filenames list is incorrect")
-            assert(hill.owners[0], accounts[3], "file owner is incorrect")
-            assert(hill.owners[1], accounts[1], "file owner is incorrect")
+            const repo = await mbrkInstance.getRepo({ from: accounts[3] })
+            assert(repo.filenames.length, 2, "filenames list is incorrect")
+            assert(repo.owners[0], accounts[3], "file owner is incorrect")
+            assert(repo.owners[1], accounts[1], "file owner is incorrect")
         })
 
-        it('should get aggregate of only one hills', async () => {
+        it('should get aggregate of only one repos', async () => {
             const mbrkInstance = await Mbrk.deployed()
             await mbrkInstance.revokeReadAccess(accounts[3], { from: accounts[1] })
-            const hill = await mbrkInstance.getHill({ from: accounts[3] })
-            console.log(hill)
-            assert(hill.filenames.length, 1, "filenames list is incorrect")
+            const repo = await mbrkInstance.getRepo({ from: accounts[3] })
+            assert(repo.filenames.length, 1, "filenames list is incorrect")
         })
     })
 

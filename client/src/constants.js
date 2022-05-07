@@ -1,6 +1,8 @@
 export const IPFS_API_ENDPOINT = 'https://ipfs.infura.io:5001'
-export const WEB3_INFURA_HOST = 'https://ropsten.infura.io/v3/b8509c529b8c49a39d119cc5effa8400'
-export const CONTRACT_ADDRESS = '0xD596317DEd894FF5C97E46791A24a9a761De142b' //TODO may change
+export const IPFS_PROJECT_ID = '27a33smy5w7Wrvml0j5KWnE7kMp'
+export const IPFS_PROJECT_KEY = '90d01bbba737df2b6550a7f32c0415ff'
+export const WSS_INFURA_HOST = 'wss://ropsten.infura.io/ws/v3/b8509c529b8c49a39d119cc5effa8400'
+export const CONTRACT_ADDRESS = '0xdba76c3791DbBdD2E8994D6372A2ccCc338D93e1'
 const { abi } = require('./contracts/Mbrk.json')
 export const ABI = abi;
 
@@ -13,7 +15,7 @@ export const LANG = {
     remove: 'revoke',
     accessPanel: 'Viewers',
     addUser: 'Add viewer',
-    invalidAddress: 'is not a valid address',
+    invalidAddress: 'Address is not valid',
     addressExists: 'Address already exists',
     loading: 'Please wait',
     avgDownload: 'Download MB/s',
@@ -24,5 +26,11 @@ export const LANG = {
     createUser: 'Create user',
     deleteUser: 'Delete user',
     grantAdmin: 'Grant admin',
-    revokeAdmin: 'Revoke admin'
+    revokeAdmin: 'Revoke admin',
+
+    callPass: 'Smart contract call passed',
+    callBad: 'Smart contract call failed',
+    adminPanel: 'Admin panel',
+    login: 'Login with MetaMask',
+    title: 'M\n.B.R.K.',
 }

@@ -1,34 +1,31 @@
-import { ThemeProvider } from '@emotion/react'
-import { create as createIPFS } from 'ipfs-http-client'
+import { create as createIpfs } from 'ipfs-http-client'
 import Web3 from 'web3'
-import { IPFS_API_ENDPOINT, CONTRACT_ADDRESS, ABI } from './constants'
+import { IPFS_API_ENDPOINT, CONTRACT_ADDRESS, ABI, WSS_INFURA_HOST, IPFS_PROJECT_ID, IPFS_PROJECT_KEY } from './constants'
 
-const ipfs = createIPFS(IPFS_API_ENDPOINT)
-let web3
 let contract
+let ipfs
+let auth
 
-const downloads = [];
-const uploads = [];
-const pings = [];
+const downloads = []
+const uploads = []
+const pings = []
 
-let updateDownload;
-let updateUpload;
-let updateLatency;
+let updateDownload
+let updateUpload
+let updateLatency
 
-export const initializeWeb3 = (account) => {
-    const accountLowerCase = account.toLowerCase();
-    // web3 = new Web3(window.ethereum)
+export const initializeWeb3 = async (account) => {
+    const accountLowerCase = account.toLowerCase()
+    const web3MetaMask = new Web3(window.ethereum)
+    const web3Infura = new Web3(new Web3.providers.WebsocketProvider(WSS_INFURA_HOST))
 
-    const provider = new Web3.providers.WebsocketProvider('ws://127.0.0.1:7545');
-    web3 = new Web3(provider)
-    contract = new web3.eth.Contract(ABI, '0xefAB428ce0b7b789230129F29b321d641cc7F52d', { from: accountLowerCase })
+    contract = new web3MetaMask.eth.Contract(ABI, CONTRACT_ADDRESS, { from: accountLowerCase })
+    const contractInfura = new web3Infura.eth.Contract(ABI, CONTRACT_ADDRESS)
 
-    setupEventListeners(contract, accountLowerCase)
-}
-export const resetWeb3 = () => {
-    web3.eth.currentProvider.disconnect()
-    web3 = null
-    contract = null
+    setupEventListeners(contractInfura, accountLowerCase)
+
+    auth = `Basic ${Buffer.from(IPFS_PROJECT_ID + ':' + IPFS_PROJECT_KEY).toString('base64')}`
+    ipfs = createIpfs(IPFS_API_ENDPOINT)
 }
 
 export const pingContract = async () => {
@@ -37,41 +34,33 @@ export const pingContract = async () => {
         await contract.methods.ping().call()
         const perfEnd = performance.now()
         collectLatencyMetric(perfEnd - perfStart)
-        return true
-    } catch (e) {
-        console.error(e)
-        return false
+    } catch (err) {
+        console.error(err)
+        throw err
     }
 }
 
-export const uploadToIpfs = async (file) => {
+export const uploadFile = async (file) => {
     try {
         const perfStart = performance.now()
-
         const { path } = await ipfs.add(file)
-
         const perfEnd = performance.now()
         const elapsed = (perfEnd - perfStart)
-
-        if (storeFileOnContract(file.name, file.size, path)) {
-            ipfs.pin.add(path)
-            collectUploadMetric({ elapsed, size: file.size })
-            return true
-        }
-
-        return false
-    } catch (e) {
-        console.error(e)
-        return false
+        ipfs.pin.add(path, { headers: { authorization: auth } })
+        await createFile(file.name, file.size, path)
+        collectUploadMetric({ elapsed, size: file.size })
+    } catch (err) {
+        console.error(err)
+        throw err
     }
 }
 
-export const downloadFromIpfs = async (filename) => {
+export const downloadFile = async (filename) => {
     try {
-        const metaData = await loadFileFromContract(filename)
+        const metaData = await getFile(filename)
 
         const chunks = []
-        let size = 0;
+        let size = 0
         const perfStart = performance.now()
         for await (const chunk of ipfs.cat(metaData.cid)) {
             size += chunk.byteLength
@@ -82,129 +71,131 @@ export const downloadFromIpfs = async (filename) => {
         collectDownloadMetric({ elapsed, size })
 
         return chunks
-    } catch (e) {
-        console.error(e)
+    } catch (err) {
+        console.error(err)
+        throw err
     }
 }
 
-export const loadLibraryData = async () => {
+export const loadRepoData = async () => {
     try {
-        return await contract.methods.getHill().call();
+        const res = await contract.methods.getRepo().call()
+        return res
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const loadUserData = async () => {
     try {
-        return await contract.methods.getUser().call();
+        const res = await contract.methods.getUser().call()
+        return res
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
-const storeFileOnContract = async (filename, fileSize, cid) => {
+const createFile = async (filename, fileSize, cid) => {
     try {
         await contract.methods.createFile(filename, cid, fileSize).send()
-        return true
+
     } catch (err) {
         console.error(err)
-        return false
+        throw err
     }
 }
 
-const loadFileFromContract = async (filename) => {
+const getFile = async (filename) => {
     try {
-        return await contract.methods.getFile(filename).call()
+        const res = await contract.methods.getFile(filename).call()
+        return res
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
-export const deleteFileFromContract = async (filename) => {
+export const deleteFile = async (filename) => {
     try {
         const { cid } = await contract.methods.getFile(filename).call()
         await contract.methods.deleteFile(filename).send()
-        await ipfs.pin.rm(cid)
-    } catch (err) {
-        console.error(err)
-    }
-}
+        ipfs.pin.rm(cid, { headers: { authorization: auth } })
 
-export const createUserOnContract = async (address) => {
-    try {
-        await contract.methods.createUser(address).call()
-        return true
     } catch (err) {
         console.error(err)
-        return false
+        throw err
     }
 }
 
 export const grantReadAccess = async (address) => {
     try {
-        return await contract.methods.grantReadAccess(address).send()
+        await contract.methods.grantReadAccess(address).send()
+
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const revokeReadAccess = async (address) => {
     try {
-        return await contract.methods.revokeReadAccess(address).send()
+        await contract.methods.revokeReadAccess(address).send()
+
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const grantAdmin = async (address) => {
     try {
-        return await contract.methods.grantAdmin(address).send()
+        await contract.methods.grantAdmin(address).send()
+
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const revokeAdmin = async (address) => {
     try {
-        return await contract.methods.revokeAdmin(address).send()
+        await contract.methods.revokeAdmin(address).send()
+
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const createUser = async (address) => {
     try {
-        return await contract.methods.createUser(address).send()
+        await contract.methods.createUser(address).send()
+
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
 export const deleteUser = async (address) => {
     try {
-        return await contract.methods.deleteUser(address).send()
+        await contract.methods.deleteUser(address).send()
     } catch (err) {
         console.error(err)
+        throw err
     }
 }
 
-
-
 const collectDownloadMetric = (download) => {
-    downloads.push(download);
+    downloads.push(download)
 
     if (!updateDownload) return
 
-    const a = performance.now()
-    setTimeout(() => {
-        console.log(performance.now() - a)
-    }, 1000)
     const average = downloads.reduce(({ avg, n }, curr) => {
         const sizeMb = curr.size / Math.pow(2, 20)
-        console.log(sizeMb)
         const elapsedSec = curr.elapsed / 1000
-        console.log(elapsedSec)
         const throughput = sizeMb / elapsedSec
 
         return {
@@ -218,7 +209,7 @@ const collectDownloadMetric = (download) => {
 }
 
 const collectUploadMetric = (upload) => {
-    uploads.push(upload);
+    uploads.push(upload)
 
     if (!updateUpload) return
 
@@ -238,7 +229,7 @@ const collectUploadMetric = (upload) => {
 }
 
 const collectLatencyMetric = (latency) => {
-    pings.push(latency);
+    pings.push(latency)
 
     if (!updateLatency) return
 
@@ -259,28 +250,18 @@ export const setupMetrics = (setDownload, setUpload, setLatency) => {
     updateLatency = setLatency
 }
 
-const userUpdatedCallbacks = []
-const libraryUpdatedCallbacks = []
+const eventCallbacks = []
 
-export const addUserUpdatedCallback = (fn) => {
-    userUpdatedCallbacks.push(fn)
-}
-
-export const addLibraryUpdatedCallback = (fn) => {
-    libraryUpdatedCallbacks.push(fn)
+export const addEventCallback = (fn) => {
+    eventCallbacks.push(fn)
 }
 
 const setupEventListeners = (_contract, account) => {
     const callback = (event) => {
         const user = event.returnValues.user?.toLowerCase()
-        const libraryOwner = event.returnValues.libraryOwner?.toLowerCase()
 
         if (user === account) {
-            userUpdatedCallbacks.forEach(fn => fn())
-        }
-
-        if (libraryOwner === account) {
-            libraryUpdatedCallbacks.forEach(fn => fn())
+            eventCallbacks.forEach(fn => fn())
         }
     }
 
@@ -290,6 +271,7 @@ const setupEventListeners = (_contract, account) => {
 
     _contract.events.UserUpdated(eventOptions)
         .on('data', callback)
-    _contract.events.LibraryUpdated(eventOptions)
+    _contract.events.RepoUpdated(eventOptions)
         .on('data', callback)
+
 }

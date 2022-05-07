@@ -8,7 +8,7 @@ library AccountsLibrary {
         mapping(address => User) _users;
     }
 
-    function addUser(Accounts storage self, address key) internal {
+    function enableUser(Accounts storage self, address key) internal {
         self._users[key].isValid = true;
     }
 
@@ -34,21 +34,21 @@ library AccountsLibrary {
         return self._users[key].isAdmin && self._users[key].isValid;
     }
 
-    function addHill(
+    function addRepo(
         Accounts storage self,
-        address hillOwner,
+        address repoOwner,
         address key
     ) internal {
-        return self._users[key].accessList.push(hillOwner);
+        return self._users[key].accessList.push(repoOwner);
     }
 
-    function removeHill(
+    function removeRepo(
         Accounts storage self,
-        address hillOwner,
+        address repoOwner,
         address key
     ) internal {
         uint256 len = self._users[key].accessList.length;
-        uint256 idx = findIndexOfHill(self, hillOwner, key);
+        uint256 idx = findIndexOfRepo(self, repoOwner, key);
 
         if (idx >= len) {
             return;
@@ -58,14 +58,14 @@ library AccountsLibrary {
         self._users[key].accessList.pop();
     }
 
-    function findIndexOfHill(
+    function findIndexOfRepo(
         Accounts storage self,
-        address hillOwner,
+        address repoOwner,
         address key
     ) private view returns (uint256) {
         uint256 len = self._users[key].accessList.length;
         for (uint256 i = 0; i < len; i++) {
-            if (self._users[key].accessList[i] == hillOwner) {
+            if (self._users[key].accessList[i] == repoOwner) {
                 return i;
             }
         }

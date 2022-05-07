@@ -1,48 +1,55 @@
-import ContentLibrary from '../components/ContentLibrary'
+import RepoViewer from '../components/RepoViewer'
 import AccessPanel from '../components/AccessPanel'
 import Diagnostics from '../components/Diagnostics'
 import Admin from '../components/Admin'
-import { Alert } from '@mui/material';
-import './Home.scss';
-import { useState, useEffect, useRef } from 'react';
-import { loadLibraryData, loadUserData, addLibraryUpdatedCallback } from '../api';
+import { Alert } from '@mui/material'
+import './Home.scss'
+import { useState, useEffect, useRef } from 'react'
+import { loadRepoData, loadUserData, addEventCallback } from '../api'
+import { LANG } from '../constants'
 
 function Home() {
   const [alerts, setAlerts] = useState([])
-  const alertsRef = useRef(alerts);
-  alertsRef.current = alerts;
+  const alertsRef = useRef(alerts)
+  alertsRef.current = alerts
 
-  const [libraryData, setLibraryData] = useState(null)
+  const [repoData, setRepoData] = useState(null)
   const [userData, setUserData] = useState(null)
-  const [contractUpdate, setContractUpdate] = useState(0);
-  addLibraryUpdatedCallback(() => setContractUpdate(contractUpdate + 1))
-
-  useEffect(() => {
-    loadLibraryData().then(setLibraryData)
-    loadUserData().then(setUserData)
-  }, [contractUpdate])
+  const [contractUpdate, setContractUpdate] = useState(0)
+  addEventCallback(() => setContractUpdate(contractUpdate + 1))
 
   const createAlert = (msg, severity = 'error') => {
     const newAlert = <Alert key={`${alerts.length}_${msg}`} severity={severity}>{msg}</Alert>
-    setAlerts([...alerts, newAlert]);
+    setAlerts([...alerts, newAlert])
     setTimeout(() => {
       if (alertsRef.current <= 0) return
       setAlerts(alertsRef.current.slice(1))
     }, 3000)
   }
 
+  const isAdmin = () => {
+    return userData?.isAdmin
+  }
+
+  useEffect(() => {
+    loadRepoData().then(setRepoData)
+      .catch(() => createAlert(LANG.callBad))
+    loadUserData().then(setUserData)
+      .catch(() => createAlert(LANG.callBad))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contractUpdate])
+
   return (
     <div className="home">
       {alerts}
       <div className="row">
-        <ContentLibrary libraryData={libraryData} pushAlert={createAlert} />
-        {/* <div className="space"></div> */}
-        <AccessPanel libraryData={libraryData} pushAlert={createAlert} />
+        <RepoViewer repoData={repoData} pushAlert={createAlert} />
+        <AccessPanel repoData={repoData} pushAlert={createAlert} />
       </div>
-      <Diagnostics />
-      <Admin userData={userData} pushAlert={createAlert}></Admin>
+      <Diagnostics pushAlert={createAlert} />
+      {isAdmin() && <Admin pushAlert={createAlert}></Admin>}
     </div>
-  );
+  )
 }
 
-export default Home;
+export default Home
